@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Chatly — Private One-to-One Messaging</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="theme-dark">
+  <div id="app-wrapper">
+    <!-- Viewport Container -->
+    <div id="device-container" class="phone-frame">
+      
+      <!-- Top Device Status Bar -->
+      <div class="device-status-bar">
+        <span class="status-time" id="status-clock">09:41</span>
+        <div class="status-brand">Chatly Private</div>
+        <div class="status-icons">
+          <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+          <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+          <i data-lucide="battery" class="w-4 h-4"></i>
+        </div>
+      </div>
+
+      <!-- IN-APP NOTIFICATION BANNER / TOAST -->
+      <div id="notification-banner" class="notification-banner hidden">
+        <div class="notif-avatar" id="notif-avatar">🔒</div>
+        <div class="notif-body">
+          <div class="notif-title" id="notif-title">New message</div>
+          <div class="notif-text" id="notif-text">Tap to view</div>
+        </div>
+        <button id="notif-close" class="notif-close"><i data-lucide="x"></i></button>
+      </div>
+
+      <!-- MAIN APP VIEWS CONTAINER -->
+      <div id="views-container">
+
+        <!-- 1. AUTH SCREEN (Welcome / Sign In / Sign Up) -->
+        <section id="view-auth" class="view active">
+          <div class="auth-header">
+            <div class="brand-badge">
+              <div class="brand-icon-wrap">
+                <i data-lucide="shield-check" class="brand-logo-icon"></i>
+                <div class="brand-pulse"></div>
+              </div>
+            </div>
+            <h1 class="brand-title">Chatly</h1>
+            <p class="brand-subtitle">Private, secure one-to-one messaging with real-time sync, live presence, and chat locks.</p>
+          </div>
+
+          <!-- Quick Test Accounts Switcher (Instant 1-Click Login) -->
+          <div class="quick-login-card">
+            <div class="card-title-sm"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan"></i> Instant Demo Profiles</div>
+            <div class="demo-pills-row">
+              <button class="demo-pill" data-user="faraz">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80" alt="Faraz" />
+                <div class="demo-pill-info">
+                  <span class="name">Faraz</span>
+                  <span class="id">@faraz</span>
+                </div>
+              </button>
+              <button class="demo-pill" data-user="alina">
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" alt="Alina" />
+                <div class="demo-pill-info">
+                  <span class="name">Alina</span>
+                  <span class="id">@alina</span>
+                </div>
+              </button>
+              <button class="demo-pill" data-user="sarah">
+                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80" alt="Sarah" />
+                <div class="demo-pill-info">
+                  <span class="name">Sarah</span>
+                  <span class="id">@sarah</span>
+                </div>
+              </button>
+              <button class="demo-pill" data-user="alex">
+                <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&q=80" alt="Alex" />
+                <div class="demo-pill-info">
+                  <span class="name">Alex</span>
+                  <span class="id">@alex</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Auth Tabs -->
+          <div class="auth-tabs">
+            <button id="tab-login-btn" class="auth-tab active">Sign In</button>
+            <button id="tab-register-btn" class="auth-tab">Create Account</button>
+          </div>
+
+          <!-- Login Form -->
+          <form id="form-login" class="auth-form active">
+            <div class="input-group">
+              <label for="login-email">Email or Chat ID</label>
+              <div class="input-wrap">
+                <i data-lucide="mail" class="input-icon"></i>
+                <input type="text" id="login-email" placeholder="e.g. faraz@chatly.io or faraz" value="faraz@chatly.io" required autocomplete="username" />
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="login-password">Password</label>
+              <div class="input-wrap">
+                <i data-lucide="lock" class="input-icon"></i>
+                <input type="password" id="login-password" value="Password123!" placeholder="••••••••" required autocomplete="current-password" />
+                <button type="button" class="btn-toggle-pw" id="btn-toggle-pw"><i data-lucide="eye"></i></button>
+              </div>
+            </div>
+            <div class="form-row-between">
+              <label class="remember-label">
+                <input type="checkbox" id="login-remember" checked />
+                <span>Keep me signed in</span>
+              </label>
+            </div>
+            <button type="submit" class="btn-primary w-full">Sign In to Chatly</button>
+          </form>
+
+          <!-- Register Form -->
+          <form id="form-register" class="auth-form hidden">
+            <div class="input-group">
+              <label for="reg-name">Display Name</label>
+              <div class="input-wrap">
+                <i data-lucide="user" class="input-icon"></i>
+                <input type="text" id="reg-name" placeholder="Your name (e.g. Zain Malik)" required />
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="reg-email">Email Address</label>
+              <div class="input-wrap">
+                <i data-lucide="mail" class="input-icon"></i>
+                <input type="email" id="reg-email" placeholder="you@domain.com" required />
+              </div>
+              <span class="field-hint">Never exposed publicly. Used for login & recovery.</span>
+            </div>
+            <div class="input-group">
+              <label for="reg-password">Password</label>
+              <div class="input-wrap">
+                <i data-lucide="lock" class="input-icon"></i>
+                <input type="password" id="reg-password" placeholder="At least 6 characters" required />
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="reg-handle">Choose Unique Chat ID</label>
+              <div class="input-wrap">
+                <span class="input-prefix">@</span>
+                <input type="text" id="reg-handle" placeholder="letters only (e.g. zain)" maxlength="20" required />
+                <span id="handle-feedback-icon" class="input-status-icon"></span>
+              </div>
+              <div id="handle-feedback-msg" class="field-hint">3-20 alphabetic letters. Unique discovery handle.</div>
+              <div id="handle-suggestions" class="suggestions-row hidden"></div>
+            </div>
+            <button type="submit" class="btn-primary w-full">Create Account</button>
+          </form>
+
+          <!-- Email Verification Modal -->
+          <div id="modal-verify" class="modal-backdrop hidden">
+            <div class="modal-card">
+              <div class="modal-icon-header"><i data-lucide="mail-check"></i></div>
+              <h3>Verify Your Email</h3>
+              <p class="modal-desc">Enter the verification code to activate your Chatly account.</p>
+              <div class="code-inputs-wrap">
+                <input type="text" id="verify-code-input" maxlength="6" placeholder="123456" class="code-input-box" />
+              </div>
+              <p class="field-hint text-center" id="demo-code-tip"></p>
+              <div class="modal-actions">
+                <button type="button" id="btn-verify-submit" class="btn-primary w-full">Verify & Continue</button>
+                <button type="button" id="btn-verify-cancel" class="btn-ghost w-full">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- 2. CHATS HOME SCREEN -->
+        <section id="view-chats" class="view">
+          
+          <!-- Home Header -->
+          <header class="home-header">
+            <div class="header-user" id="btn-open-settings">
+              <div class="avatar-wrapper">
+                <img id="my-avatar-img" src="" alt="Me" class="avatar-img" />
+                <span class="online-dot-badge"></span>
+                <span id="my-music-floating-badge" class="floating-music-note hidden">🎵</span>
+              </div>
+              <div class="user-meta">
+                <div class="my-display-name" id="my-display-name">Loading...</div>
+                <div class="my-handle-badge" id="my-handle-display">@handle</div>
+              </div>
+            </div>
+            <div class="header-actions">
+              <button id="btn-spotify-note-toggle" class="header-icon-btn spotify-btn" title="Spotify Music Note">
+                <i data-lucide="music" class="w-5 h-5"></i>
+              </button>
+              <button id="btn-new-chat-search" class="header-icon-btn primary-pulse" title="Find by Chat ID">
+                <i data-lucide="user-plus" class="w-5 h-5"></i>
+              </button>
+              <button id="btn-settings-open" class="header-icon-btn" title="Settings">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </header>
+
+          <!-- SPOTIFY MUSIC NOTE STRIP -->
+          <div id="spotify-active-banner" class="spotify-active-banner hidden">
+            <div class="sp-banner-left">
+              <div class="sp-album-thumb">
+                <img id="sp-active-art" src="" alt="Album Cover" />
+                <div class="sp-soundwave">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="sp-track-details">
+                <div class="sp-track-title" id="sp-active-title">Track Name</div>
+                <div class="sp-track-artist" id="sp-active-artist">Artist Name</div>
+                <div class="sp-user-note" id="sp-active-note">"Vibing"</div>
+              </div>
+            </div>
+            <div class="sp-banner-right">
+              <button id="btn-play-pause-preview" class="sp-play-btn" title="Play 30s Audio Preview">
+                <i data-lucide="play" id="sp-play-icon"></i>
+              </button>
+              <button id="btn-clear-my-music-note" class="sp-clear-btn" title="Clear Note">
+                <i data-lucide="x"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- STORIES & CONTACTS TRAY (24h Stories + Music Notes) -->
+          <div class="stories-section">
+            <div class="section-title-row">
+              <span class="section-heading">Stories & Music Notes</span>
+              <button id="btn-add-story-shortcut" class="text-link-xs"><i data-lucide="plus-circle" class="w-3.5 h-3.5 inline"></i> Post</button>
+            </div>
+            <div class="stories-scroll-row" id="stories-tray">
+              <!-- Add Story Pill -->
+              <div class="story-item" id="btn-create-story">
+                <div class="story-avatar-ring add-story-ring">
+                  <div class="add-story-icon-wrap">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                  </div>
+                </div>
+                <span class="story-username">Your Story</span>
+              </div>
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+
+          <!-- SEARCH CHAT ID QUICK BAR -->
+          <div class="search-bar-wrap">
+            <div class="search-input-box">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="quick-search-handle" placeholder="Enter any Chat ID (e.g. faraz, alina, alex)..." />
+              <button id="btn-search-trigger" class="btn-search-go">Find</button>
+            </div>
+
+            <!-- INLINE SEARCH RESULT CARD -->
+            <div id="search-result-card" class="search-result-card hidden">
+              <div class="result-avatar-box">
+                <img id="result-card-avatar" src="" alt="Avatar" />
+                <span id="result-online-badge" class="online-dot-badge"></span>
+                <span id="result-music-badge" class="result-music-badge hidden">🎵</span>
+              </div>
+              <div class="result-info-col">
+                <div class="result-name-row">
+                  <span id="result-card-name" class="result-name">User Name</span>
+                  <span id="result-card-handle" class="result-handle">@handle</span>
+                </div>
+                <div id="result-card-status" class="result-status">"Status"</div>
+                <div id="result-presence-text" class="text-xs text-muted">Offline</div>
+              </div>
+              <button type="button" id="btn-result-chat" class="btn-result-chat" title="Start Chat Now">
+                <i data-lucide="message-square" class="w-4 h-4 inline mr-1"></i>
+                <span>Chat</span>
+              </button>
+              <button type="button" id="btn-result-dismiss" class="btn-result-dismiss" title="Close">✕</button>
+            </div>
+          </div>
+
+          <!-- CONVERSATIONS LIST -->
+          <div class="conversations-container">
+            <div class="section-title-row">
+              <span class="section-heading">Direct Chats</span>
+              <span class="count-pill" id="convs-count">0</span>
+            </div>
+            <div id="conversations-list" class="conversations-list">
+              <!-- Dynamic Conversation Rows -->
+              <div class="empty-state" id="convs-empty-state">
+                <i data-lucide="message-square-off" class="empty-icon"></i>
+                <p>No conversations yet.</p>
+                <span>Search any Chat ID above to connect and start chatting live!</span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- 3. CONVERSATION VIEW (One-to-One Private Chat) -->
+        <section id="view-conversation" class="view">
+          
+          <!-- Conversation Top Bar -->
+          <header class="conv-header">
+            <button id="btn-conv-back" class="conv-back-btn" title="Back to Chats">
+              <i data-lucide="chevron-left"></i>
+            </button>
+            
+            <div class="conv-user-info" id="btn-view-target-profile">
+              <div class="conv-avatar-wrap">
+                <img id="conv-target-avatar" src="" alt="Target" class="conv-avatar" />
+                <span id="conv-target-online-badge" class="online-dot-badge hidden"></span>
+                <span id="conv-target-music-note-icon" class="target-music-badge hidden">🎵</span>
+              </div>
+              <div class="conv-name-col">
+                <div class="conv-display-name-row">
+                  <span id="conv-target-name">Name</span>
+                  <i data-lucide="badge-check" class="verified-icon"></i>
+                </div>
+                <div class="conv-status-sub" id="conv-target-status">
+                  <span id="conv-target-handle" class="text-xs text-muted">@handle</span>
+                  <span class="dot-separator">•</span>
+                  <span id="conv-target-presence-indicator" class="text-xs presence-indicator presence-offline">Offline</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="conv-header-actions">
+              <button id="btn-toggle-chat-lock" class="conv-action-btn" title="Chat Lock Status">
+                <i data-lucide="lock" id="icon-conv-lock-state"></i>
+              </button>
+              <button id="btn-conv-more-menu" class="conv-action-btn" title="Conversation Menu">
+                <i data-lucide="more-vertical"></i>
+              </button>
+            </div>
+          </header>
+
+          <!-- TARGET SPOTIFY MUSIC NOTE PILL -->
+          <div id="target-spotify-header-pill" class="target-spotify-pill hidden">
+            <div class="sp-pill-content">
+              <i data-lucide="disc-3" class="w-3.5 h-3.5 text-spotify spin-disc"></i>
+              <span id="target-sp-title" class="target-sp-text">Listening to: Title — Artist</span>
+              <button id="btn-play-target-preview" class="sp-pill-play" title="Play preview">
+                <i data-lucide="play" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- MESSAGES TIMELINE -->
+          <div id="messages-timeline" class="messages-timeline">
+            <!-- Messages injected here -->
+          </div>
+
+          <!-- TYPING INDICATOR -->
+          <div id="typing-indicator" class="typing-bar hidden">
+            <div class="typing-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <span id="typing-text" class="typing-label">Typing...</span>
+          </div>
+
+          <!-- MESSAGE COMPOSER -->
+          <div class="composer-container">
+            <!-- Hidden File Input for Image Upload -->
+            <input type="file" id="media-file-input" accept="image/jpeg,image/png,image/webp,image/*" class="hidden" />
+
+            <div class="composer-row">
+              <button id="btn-open-gallery" class="composer-icon-btn" title="Send Gallery Photo">
+                <i data-lucide="image"></i>
+              </button>
+              <button id="btn-open-stickers" class="composer-icon-btn" title="Send Sticker">
+                <i data-lucide="smile"></i>
+              </button>
+
+              <div class="composer-input-wrap">
+                <textarea id="message-input" placeholder="Type a message..." rows="1"></textarea>
+              </div>
+
+              <button id="btn-send-message" class="composer-send-btn" title="Send">
+                <i data-lucide="send"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- STICKERS TRAY POPUP -->
+          <div id="stickers-tray" class="stickers-tray hidden">
+            <div class="stickers-header">
+              <span class="stickers-title">Stickers & Reactions</span>
+              <button id="btn-close-stickers" class="stickers-close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="sticker-categories">
+              <button class="stk-cat-btn active" data-cat="emotions">Emotions</button>
+              <button class="stk-cat-btn" data-cat="greetings">Greetings</button>
+              <button class="stk-cat-btn" data-cat="vibes">Vibes</button>
+            </div>
+            <div class="stickers-grid" id="stickers-grid"></div>
+          </div>
+
+          <!-- CONVERSATION DROPDOWN OPTIONS MENU -->
+          <div id="conv-options-menu" class="dropdown-menu hidden">
+            <button class="dropdown-item" id="btn-opt-lock-config">
+              <i data-lucide="shield-alert"></i>
+              <span>Chat Lock Setup</span>
+            </button>
+            <button class="dropdown-item" id="btn-opt-view-profile">
+              <i data-lucide="user"></i>
+              <span>View Profile Card</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item text-danger" id="btn-opt-block-user">
+              <i data-lucide="ban"></i>
+              <span>Block User</span>
+            </button>
+          </div>
+
+        </section>
+
+      </div> <!-- /views-container -->
+
+      <!-- ============================================== -->
+      <!-- GLOBAL MODALS & OVERLAYS                       -->
+      <!-- ============================================== -->
+
+      <!-- 1. CHAT LOCK PRIVACY PIN / BIOMETRIC PAD OVERLAY -->
+      <div id="lock-screen-overlay" class="lock-screen-overlay hidden">
+        <div class="lock-pad-card">
+          <div class="lock-shield-icon">
+            <i data-lucide="lock" class="w-8 h-8 text-cyan"></i>
+          </div>
+          <h2 class="lock-title">Chat Protected</h2>
+          <p class="lock-desc">Enter your 6-digit PIN or authenticate with biometrics to reveal this conversation.</p>
+          
+          <div class="pin-dots-row">
+            <span class="pin-dot" id="dot-0"></span>
+            <span class="pin-dot" id="dot-1"></span>
+            <span class="pin-dot" id="dot-2"></span>
+            <span class="pin-dot" id="dot-3"></span>
+            <span class="pin-dot" id="dot-4"></span>
+            <span class="pin-dot" id="dot-5"></span>
+          </div>
+
+          <div id="lock-error-msg" class="lock-error-text"></div>
+
+          <!-- Keypad -->
+          <div class="num-keypad">
+            <button class="key-btn" data-key="1">1</button>
+            <button class="key-btn" data-key="2">2</button>
+            <button class="key-btn" data-key="3">3</button>
+            <button class="key-btn" data-key="4">4</button>
+            <button class="key-btn" data-key="5">5</button>
+            <button class="key-btn" data-key="6">6</button>
+            <button class="key-btn" data-key="7">7</button>
+            <button class="key-btn" data-key="8">8</button>
+            <button class="key-btn" data-key="9">9</button>
+            <button class="key-btn action-key" id="btn-biometric-unlock" title="Use Biometrics">
+              <i data-lucide="fingerprint" class="w-6 h-6 text-cyan"></i>
+            </button>
+            <button class="key-btn" data-key="0">0</button>
+            <button class="key-btn action-key" id="btn-keypad-backspace" title="Delete">
+              <i data-lucide="delete" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <div class="lock-footer-row">
+            <button id="btn-cancel-unlock" class="text-link-sm">Cancel</button>
+            <button id="btn-simulate-faceid" class="text-link-sm text-cyan"><i data-lucide="scan-face" class="w-4 h-4 inline"></i> Face ID</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. CHAT LOCK SETUP MODAL -->
+      <div id="modal-lock-setup" class="modal-backdrop hidden">
+        <div class="modal-card">
+          <div class="modal-icon-header"><i data-lucide="shield-check"></i></div>
+          <h3>Configure Chat Lock</h3>
+          <p class="modal-desc">Locked conversations hide previews, media, and unread badges until you verify access.</p>
+          
+          <div class="toggle-row">
+            <div>
+              <div class="font-semibold">Enable Chat Lock</div>
+              <div class="text-xs text-muted">Only applies to your view</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setup-lock-toggle" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="input-group" id="setup-pin-group">
+            <label for="setup-pin-input">Set Security PIN (4-6 digits)</label>
+            <div class="input-wrap">
+              <i data-lucide="key" class="input-icon"></i>
+              <input type="password" id="setup-pin-input" maxlength="6" placeholder="e.g. 123456" />
+            </div>
+            <span class="field-hint">Default demo PIN is 123456</span>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="font-semibold">Enable Device Biometrics</div>
+              <div class="text-xs text-muted">Quick unlock with Touch/Face ID</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setup-biometrics-toggle" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" id="btn-save-lock-setup" class="btn-primary w-full">Save Lock Settings</button>
+            <button type="button" id="btn-close-lock-setup" class="btn-ghost w-full">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. SPOTIFY MUSIC NOTE MODAL -->
+      <div id="modal-spotify-note" class="modal-backdrop hidden">
+        <div class="modal-card modal-card-lg">
+          <div class="spotify-header-badge">
+            <i data-lucide="music-2" class="w-5 h-5 text-spotify"></i>
+            <span>Spotify Music Note</span>
+          </div>
+          <h3>Share What You're Listening To</h3>
+          <p class="modal-desc">Your Music Note floats around your avatar and displays on your profile and in direct chats!</p>
+
+          <div class="input-group">
+            <label for="spotify-search-input">Search Track on Spotify</label>
+            <div class="input-wrap">
+              <i data-lucide="search" class="input-icon"></i>
+              <input type="text" id="spotify-search-input" placeholder="Search by song, artist or album..." />
+            </div>
+          </div>
+
+          <div class="spotify-tracks-list" id="spotify-tracks-list"></div>
+
+          <div class="input-group mt-3">
+            <label for="spotify-note-quote">Personal Note or Mood</label>
+            <div class="input-wrap">
+              <i data-lucide="message-circle" class="input-icon"></i>
+              <input type="text" id="spotify-note-quote" placeholder="e.g. Late night coding flow 🌙✨" maxlength="40" />
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" id="btn-save-spotify-note" class="btn-primary w-full">Update Music Note</button>
+            <button type="button" id="btn-clear-spotify-note" class="btn-secondary w-full">Remove Note</button>
+            <button type="button" id="btn-close-spotify-note" class="btn-ghost w-full">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 24H STORY CREATOR MODAL -->
+      <div id="modal-create-story" class="modal-backdrop hidden">
+        <div class="modal-card">
+          <div class="modal-icon-header"><i data-lucide="camera"></i></div>
+          <h3>Post to 24h Story</h3>
+          <p class="modal-desc">Share a photo or gradient text story that automatically expires after 24 hours.</p>
+
+          <div class="story-type-tabs">
+            <button class="story-tab-btn active" data-type="image">Photo Story</button>
+            <button class="story-tab-btn" data-type="text">Text Story</button>
+          </div>
+
+          <div id="story-image-section">
+            <div class="story-upload-preview" id="story-upload-preview">
+              <img id="story-preview-img" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80" alt="Preview" />
+              <button id="btn-choose-story-img" class="btn-change-img"><i data-lucide="upload" class="w-4 h-4 inline"></i> Choose Image</button>
+            </div>
+            <input type="file" id="story-file-input" accept="image/*" class="hidden" />
+          </div>
+
+          <div id="story-text-section" class="hidden">
+            <div class="text-story-canvas" id="text-story-canvas">
+              <textarea id="story-text-input" placeholder="Type your story..." maxlength="120"></textarea>
+            </div>
+            <div class="gradient-palette">
+              <button class="color-swatch active" data-bg="linear-gradient(135deg, #0284c7 0%, #0d9488 100%)" style="background: linear-gradient(135deg, #0284c7, #0d9488);"></button>
+              <button class="color-swatch" data-bg="linear-gradient(135deg, #7c3aed 0%, #db2777 100%)" style="background: linear-gradient(135deg, #7c3aed, #db2777);"></button>
+              <button class="color-swatch" data-bg="linear-gradient(135deg, #d97706 0%, #dc2626 100%)" style="background: linear-gradient(135deg, #d97706, #dc2626);"></button>
+              <button class="color-swatch" data-bg="#090d16" style="background: #090d16;"></button>
+            </div>
+          </div>
+
+          <div class="input-group mt-3" id="story-caption-wrap">
+            <label for="story-caption-input">Caption (optional)</label>
+            <div class="input-wrap">
+              <i data-lucide="smile" class="input-icon"></i>
+              <input type="text" id="story-caption-input" placeholder="Add a caption..." maxlength="80" />
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" id="btn-publish-story" class="btn-primary w-full">Share Story</button>
+            <button type="button" id="btn-close-create-story" class="btn-ghost w-full">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. FULL-SCREEN 24H STORY VIEWER MODAL -->
+      <div id="modal-story-viewer" class="story-viewer-modal hidden">
+        <div class="story-bars-container" id="story-bars"></div>
+        <div class="story-viewer-header">
+          <div class="story-author-info">
+            <img id="viewer-author-avatar" src="" alt="Author" class="viewer-avatar" />
+            <div>
+              <div class="viewer-author-name" id="viewer-author-name">Name</div>
+              <div class="viewer-time-ago" id="viewer-time-ago">2h ago</div>
+            </div>
+          </div>
+          <button id="btn-close-story-viewer" class="viewer-close-btn"><i data-lucide="x"></i></button>
+        </div>
+        <div class="story-viewer-content" id="story-viewer-content">
+          <img id="viewer-story-img" src="" alt="Story Content" class="viewer-img hidden" />
+          <div id="viewer-story-text" class="viewer-text-content hidden">Story text</div>
+        </div>
+        <div class="story-viewer-caption" id="viewer-story-caption">Caption</div>
+        <div class="story-viewer-footer">
+          <input type="text" id="story-reply-input" placeholder="Reply to this story..." />
+          <button id="btn-send-story-reply" class="btn-story-send"><i data-lucide="send" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+
+      <!-- 6. EXACT USER LOOKUP / PROFILE PREVIEW MODAL -->
+      <div id="modal-profile-preview" class="modal-backdrop hidden">
+        <div class="modal-card">
+          <div class="profile-card-header">
+            <div class="profile-card-avatar-wrap">
+              <img id="preview-card-avatar" src="" alt="User" class="profile-card-avatar" />
+              <span id="preview-online-dot" class="online-dot-badge"></span>
+              <span id="preview-music-badge" class="floating-music-note hidden">🎵</span>
+            </div>
+            <h3 id="preview-card-name">Display Name</h3>
+            <span class="chat-id-tag" id="preview-card-handle">@chatid</span>
+          </div>
+
+          <div class="profile-card-status" id="preview-card-status">"Status message"</div>
+
+          <!-- Safe Profile Music Note -->
+          <div id="preview-card-music-note" class="profile-music-note-card hidden">
+            <div class="flex items-center gap-2">
+              <i data-lucide="music" class="w-4 h-4 text-spotify"></i>
+              <span class="text-xs font-semibold text-spotify">Spotify Music Note</span>
+            </div>
+            <div class="track-row">
+              <img id="preview-track-art" src="" alt="Art" class="w-8 h-8 rounded" />
+              <div class="flex-1 truncate">
+                <div class="text-xs font-bold text-white truncate" id="preview-track-title">Title</div>
+                <div class="text-xs text-muted truncate" id="preview-track-artist">Artist</div>
+              </div>
+            </div>
+            <div class="text-xs italic text-cyan" id="preview-track-quote">"Quote"</div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" id="btn-start-chat-from-preview" class="btn-primary w-full"><i data-lucide="message-square" class="w-4 h-4 inline mr-1"></i> Start Direct Chat</button>
+            <button type="button" id="btn-close-profile-preview" class="btn-ghost w-full">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. MESSAGE EDIT MODAL -->
+      <div id="modal-edit-message" class="modal-backdrop hidden">
+        <div class="modal-card">
+          <div class="modal-icon-header"><i data-lucide="pencil"></i></div>
+          <h3>Edit Message</h3>
+          <p class="modal-desc">You can edit your message within 15 minutes of sending. It will be marked as "Edited".</p>
+          <div class="input-group">
+            <div class="input-wrap">
+              <textarea id="edit-message-textarea" rows="3" class="w-full"></textarea>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" id="btn-save-message-edit" class="btn-primary w-full">Save Changes</button>
+            <button type="button" id="btn-cancel-message-edit" class="btn-ghost w-full">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. SETTINGS MODAL (Profile Picture from Gallery & Name Change) -->
+      <div id="modal-settings" class="modal-backdrop hidden">
+        <div class="modal-card modal-card-lg">
+          <div class="modal-icon-header"><i data-lucide="settings"></i></div>
+          <h3>Chatly Settings</h3>
+          
+          <div class="settings-list">
+            <!-- Profile Picture Setting from Gallery -->
+            <div class="setting-item">
+              <div class="setting-title">Profile Picture</div>
+              <div class="setting-avatar-row">
+                <div class="settings-avatar-wrap" id="btn-trigger-avatar-upload" title="Click to change photo">
+                  <img id="settings-avatar-preview" src="" alt="Avatar" />
+                  <div class="avatar-camera-overlay">
+                    <i data-lucide="camera" class="w-4 h-4"></i>
+                  </div>
+                </div>
+                <div class="avatar-upload-info">
+                  <button type="button" id="btn-change-avatar" class="btn-secondary btn-sm">
+                    <i data-lucide="image" class="w-3.5 h-3.5 inline mr-1"></i> Choose from Gallery
+                  </button>
+                  <span class="text-xs text-muted block mt-1">Select image file from your device</span>
+                </div>
+              </div>
+              <input type="file" id="settings-avatar-file-input" accept="image/jpeg,image/png,image/webp,image/*" class="hidden" />
+            </div>
+
+            <!-- Display Name Change (User Requested) -->
+            <div class="setting-item">
+              <div class="setting-title">Your Display Name</div>
+              <div class="input-wrap mt-1">
+                <i data-lucide="user" class="input-icon"></i>
+                <input type="text" id="settings-display-name" class="setting-input" placeholder="Enter new display name" />
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-title">Status Bio</div>
+              <div class="input-wrap mt-1">
+                <i data-lucide="smile" class="input-icon"></i>
+                <input type="text" id="settings-status-bio" class="setting-input" placeholder="e.g. Living in code & music 🎧" />
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-title">My Unique Chat ID</div>
+              <div class="text-sm font-mono text-cyan" id="settings-handle-display">@handle</div>
+              <div class="text-xs text-muted">Permanent discovery handle for other users to find you.</div>
+            </div>
+
+            <!-- Master PIN / Password -->
+            <div class="setting-item">
+              <div class="setting-title">Chat Lock Password / PIN</div>
+              <div class="text-xs text-muted mb-1">Set a master PIN to lock and protect private conversations.</div>
+              <button type="button" id="btn-open-master-pin" class="btn-secondary btn-sm">
+                <i data-lucide="key" class="w-3.5 h-3.5 inline mr-1"></i> Configure Password on Chat
+              </button>
+            </div>
+
+            <!-- Switch Profile Demo (Fast testing across tabs) -->
+            <div class="setting-item">
+              <div class="setting-title">Switch Profile (Demo Testing)</div>
+              <div class="demo-pills-row mt-2">
+                <button class="demo-pill btn-sm" data-user="faraz">Faraz</button>
+                <button class="demo-pill btn-sm" data-user="alina">Alina</button>
+                <button class="demo-pill btn-sm" data-user="sarah">Sarah</button>
+                <button class="demo-pill btn-sm" data-user="alex">Alex</button>
+              </div>
+            </div>
+
+            <!-- Standalone Download -->
+            <div class="setting-item">
+              <a href="/download/chatly.html" download="chatly.html" class="btn-secondary btn-sm w-full text-center" style="display:block;text-decoration:none;">
+                <i data-lucide="download" class="w-3.5 h-3.5 inline mr-1"></i> Download Standalone App HTML
+              </a>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="setting-item border-danger">
+              <div class="setting-title text-danger">Account Actions</div>
+              <div class="flex gap-2 mt-2">
+                <button id="btn-logout" class="btn-secondary btn-sm"><i data-lucide="log-out" class="w-3.5 h-3.5 inline"></i> Logout</button>
+                <button id="btn-delete-account" class="btn-danger btn-sm"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i> Delete Account</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-actions mt-3">
+            <button type="button" id="btn-save-settings" class="btn-primary w-full">Save Changes</button>
+            <button type="button" id="btn-close-settings" class="btn-ghost w-full">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8B. CONFIGURE CHAT LOCK PASSWORD MODAL -->
+      <div id="modal-master-pin" class="modal-backdrop hidden">
+        <div class="modal-card">
+          <div class="modal-icon-header"><i data-lucide="key-round"></i></div>
+          <h3>Configure Chat Lock Password</h3>
+          <p class="modal-desc">Set or update your security PIN / Password to lock and protect private conversations.</p>
+          
+          <div class="input-group">
+            <label for="input-master-pin">New Security PIN / Password</label>
+            <div class="input-wrap">
+              <i data-lucide="lock" class="input-icon"></i>
+              <input type="password" id="input-master-pin" placeholder="Enter 4-6 digits or password" maxlength="20" required />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="input-confirm-master-pin">Confirm PIN / Password</label>
+            <div class="input-wrap">
+              <i data-lucide="shield-check" class="input-icon"></i>
+              <input type="password" id="input-confirm-master-pin" placeholder="Re-enter to confirm" maxlength="20" required />
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="font-semibold">Enable Device Biometrics</div>
+              <div class="text-xs text-muted">Quick unlock with Touch/Face ID</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="master-biometric-toggle" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" id="btn-save-master-pin" class="btn-primary w-full">Save Chat Password</button>
+            <button type="button" id="btn-close-master-pin" class="btn-ghost w-full">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. LIGHTBOX IMAGE VIEWER -->
+      <div id="modal-lightbox" class="lightbox-modal hidden">
+        <button id="btn-close-lightbox" class="lightbox-close"><i data-lucide="x"></i></button>
+        <img id="lightbox-img" src="" alt="Enlarged" />
+      </div>
+
+    </div> <!-- /device-container -->
+  </div> <!-- /app-wrapper -->
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
